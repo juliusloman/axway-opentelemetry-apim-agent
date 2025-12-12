@@ -45,7 +45,7 @@ public class AxwayAspect {
         String[] uriSplit = requestPath.split("/");
         String apiName = uriSplit.length == 0 ? "/" : uriSplit[1];
         String httpVerb = Utils.getHttpMethod(m);
-        return httpServer.aroundHttpServer(pjp, m, apiName, httpVerb);
+        return httpServer.aroundHttpServer(pjp, m, apiName, httpVerb, null, null);
     }
 
     @Pointcut("execution(* com.vordel.circuit.net.ConnectionProcessor.invoke(..)) && args (c, m, headers, verb, body)")
@@ -89,7 +89,7 @@ public class AxwayAspect {
         String[] uriSplit = Utils.getRequestURL(m).split("/");
         String apiName;
         apiName = (String) m.getOrDefault("api.name", uriSplit[1]);
-        return httpServer.aroundHttpServer(pjp, m, apiName, httpMethod);
+        return httpServer.aroundHttpServer(pjp, m, apiName, httpMethod, runMethod, txn);
     }
 
 
@@ -102,7 +102,7 @@ public class AxwayAspect {
     public Object handleApiManagerFaultHandler(ProceedingJoinPoint pjp, ApiShunt shuntReason, Message m, InvocationContext ctx) throws Throwable {
         // Only handle API not found case
         if (shuntReason.getStatusCode() == 404) {
-            return httpServer.aroundHttpServer(pjp, m, "NotFound",  Utils.getHttpMethod(m));
+            return httpServer.aroundHttpServer(pjp, m, "NotFound",  Utils.getHttpMethod(m), null, null) ;
         }
         return pjp.proceed();
     }
