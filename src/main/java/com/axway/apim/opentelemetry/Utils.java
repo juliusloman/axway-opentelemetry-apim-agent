@@ -2,6 +2,7 @@ package com.axway.apim.opentelemetry;
 
 import com.vordel.circuit.Message;
 import com.vordel.mime.HeaderSet;
+
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapSetter;
@@ -10,12 +11,11 @@ import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 public final class Utils {
 
     public static final String HTTP_HEADERS = "http.headers";
     public static final String DEFAULT = "default";
-    public static final String AXWAY_CORRELATION_ID = "AxwayCorrelationId";
+    public static final String AXWAY_CORRELATION_ID = "axway.apim.correlation_id";
     public static final TextMapGetter<HeaderSet> getter = new
         TextMapGetter<HeaderSet>() {
             @Override
@@ -87,13 +87,22 @@ public final class Utils {
 
     public static void addHttpHeaders(Span span, String type, HeaderSet headers) {
         StringBuilder headerPrefix = new StringBuilder();
+        headerPrefix.append("http.");
         headerPrefix.append(type);
-        headerPrefix.append(".http.header.");
+        headerPrefix.append(".header.");
         String prefix = headerPrefix.toString();
         if (headers != null) {
             for (Map.Entry<String, HeaderSet.HeaderEntry> entry : headers.entrySet()) {
+                String key = entry.getKey();
                 String value = getHeaderValues(entry);
-                span.setAttribute(prefix + entry.getKey(), value);
+                if (key.equalsIgnoreCase("Authorization")) {
+                    value = "REDACTED";
+                }
+                if (type.equals("request") && !HeaderFilter.matchRequestFilter(key)) {  
+                    span.setAttribute(prefix + key, value);                    
+                } else if (type.equals("response") && !HeaderFilter.matchResponseFilter(prefix)) {
+                    span.setAttribute(prefix + key, value);                    
+                }
             }
         }
     }
