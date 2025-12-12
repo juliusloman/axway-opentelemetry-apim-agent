@@ -6,11 +6,12 @@
 
     </aspects>
 
-    <weaver options="-verbose -showWeaveInfo">
+    <weaver options="-Xlint:ignore -Xset:weaveJavaxPackages=true">
         <!-- <weaver options="-verbose -Xset:weaveJavaxPackages=true,overWeaving=true"> -->
         <!-- Weave types that are within the javax.* or org.aspectj.* packages.
             Also weave all types in the foo package that do not have the @NoWeave annotation. -->
         <include within="com.vordel..*" />
+        <exclude within="com.axway.apim.opentelemetry..*" />
         <!--		<include within="com.dynatrace..*" />-->
         <!-- Dump all types within the "somepack" package, both before are after
             they are woven, to the "./_ajdump" folder on disk (for diagnostic purposes) -->
