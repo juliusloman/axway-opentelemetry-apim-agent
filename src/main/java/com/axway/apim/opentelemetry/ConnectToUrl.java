@@ -16,6 +16,8 @@ import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.ErrorAttributes;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -34,17 +36,17 @@ public class ConnectToUrl {
             span.setAttribute("axway.apim.routing.policy", circuit.getName());
 
             try {
-                URL url = new URL(requestUrl);
-                if (url != null) {                                        
-                    span.setAttribute(UrlAttributes.URL_PATH, url.getPath());
-                    span.setAttribute(UrlAttributes.URL_QUERY, url.getQuery());
-                    span.setAttribute(UrlAttributes.URL_SCHEME, url.getProtocol());
-                    span.setAttribute(UrlAttributes.URL_FULL, url.toString());
-                    span.setAttribute(ServerAttributes.SERVER_ADDRESS, url.getHost());
-                    span.setAttribute(ServerAttributes.SERVER_PORT, url.getPort());
+                URI uri = new URI(requestUrl);                
+                if (uri != null) {                                        
+                    span.setAttribute(UrlAttributes.URL_PATH, uri.getPath());
+                    span.setAttribute(UrlAttributes.URL_QUERY, uri.getQuery());
+                    span.setAttribute(UrlAttributes.URL_SCHEME, uri.getScheme());
+                    span.setAttribute(UrlAttributes.URL_FULL, uri.toString());
+                    span.setAttribute(ServerAttributes.SERVER_ADDRESS, uri.getHost());
+                    span.setAttribute(ServerAttributes.SERVER_PORT, uri.getPort());
                 }
-            } catch (MalformedURLException e) {
-                span.setAttribute(UrlAttributes.URL_FULL, message.get("destinationURL").toString());
+            } catch (URISyntaxException e) {                
+                span.setAttribute(UrlAttributes.URL_FULL, requestUrl);
             }
             // Add request headers
             Utils.addHttpHeaders(span, "request", (HeaderSet) message.get(Utils.HTTP_HEADERS));
