@@ -15,10 +15,8 @@ import io.opentelemetry.semconv.UrlAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.ErrorAttributes;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 
