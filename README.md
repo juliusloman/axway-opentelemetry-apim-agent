@@ -63,7 +63,7 @@ Copy following jar files
 - Create a file named jvm.xml under APIGATEWAY_INSTALL_DIR/apigateway/conf/
     ```xml
     <ConfigurationFragment>
-        <VMArg name="-javaagent:/home/axway/Axway-7.7.0/apigateway/ext/lib/aspectjweaver-1.9.22.1.jar"/>
+        <VMArg name="-javaagent:/home/axway/Axway-7.7.0/apigateway/ext/lib/aspectjweaver-1.9.25.jar"/>
     </ConfigurationFragment>
     ```
 - Restart API Gateway instances
