@@ -48,12 +48,27 @@ public class HttpServer {
         String requestPath = message.getOrDefault("http.request.path", "").toString();
         String apiPath = message.getOrDefault("api.path", "").toString();
         String apiID = message.getOrDefault("api.id", "").toString();
-        String httpRoute = requestPath;
+        String resolvedToPath = message.getOrDefault("resolved.to.path", "").toString();
+        
+        // Default values for httpRoute and spanName, these will be overridden if more specific information is available
+        String httpRoute = apiName; // Using apiName as default route, if nothing else is available
+        String spanName = httpVerb + " " + apiName; // Default span name
+        if (resolvedToPath != null && !resolvedToPath.isEmpty()) {
+            // resolved.to.path exists, using it as route
+            httpRoute = resolvedToPath;
+            spanName = httpVerb + " " + resolvedToPath;
+        }
+        if ( !requestPath.isEmpty()) {
+            // Update only request path
+            spanName = httpVerb + " " + requestPath;
+        }
         if (runMethod != null) {
+            // api.path and method source path exist, using them as route and span name
             httpRoute = apiPath + runMethod.getMethod().getSourcePath();
+            spanName = httpVerb + " " + httpRoute;
         }
 
-        Span span = tracer.spanBuilder(httpVerb + " " + httpRoute).setParent(context).setSpanKind(SpanKind.SERVER).startSpan();
+        Span span = tracer.spanBuilder(spanName).setParent(context).setSpanKind(SpanKind.SERVER).startSpan();
         try (Scope ignored = span.makeCurrent()) {
             span.setAttribute(HttpAttributes.HTTP_REQUEST_METHOD, httpVerb);
             span.setAttribute(HttpAttributes.HTTP_ROUTE, httpRoute);
@@ -73,6 +88,7 @@ public class HttpServer {
             span.setAttribute("axway.message.api.name", apiName);
             span.setAttribute("axway.message.api.path", apiPath);
             span.setAttribute("axway.message.api.id", apiID);
+            span.setAttribute("axway.message.resolved.to.path", resolvedToPath);
 
             URL requestUrl = (URL) message.get("http.request.url");            
             if (requestUrl != null) {
