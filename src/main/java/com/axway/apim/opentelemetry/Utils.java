@@ -10,12 +10,18 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+                              
 public final class Utils {
 
     public static final String HTTP_HEADERS = "http.headers";
     public static final String DEFAULT = "default";
     public static final String AXWAY_CORRELATION_ID = "axway.apim.correlation_id";
+    private static Pattern BEARER_TOKEN_PREFIX = Pattern.compile("^bearer\\s+", Pattern.CASE_INSENSITIVE);
+
     public static final TextMapGetter<HeaderSet> getter = new
         TextMapGetter<HeaderSet>() {
             @Override
@@ -83,6 +89,37 @@ public final class Utils {
             span.setAttribute("http.target", requestUri);
         }
     }
+        
+    protected static String protectAuthorizationHeader(String value) {
+        if (value != null) {
+            Matcher matcher = BEARER_TOKEN_PREFIX.matcher(value);
+            if (matcher.find()) {
+                String prefix = matcher.group();
+                String token = value.substring(prefix.length());
+                int tokenLength = token.length();
+
+                int copySubstringLength = 0;
+                if (tokenLength > 11) {
+                    copySubstringLength = 4;
+                } else if (tokenLength > 5) {
+                    copySubstringLength = 1;
+                }
+
+                StringBuffer buffer = new StringBuffer(prefix);
+                if (copySubstringLength > 0) {
+                    buffer.append(token.substring(0, copySubstringLength));
+                }
+                buffer.append("****");
+                if (copySubstringLength > 0) {
+                    buffer.append(token.substring(tokenLength - copySubstringLength, tokenLength));
+                }
+                value = buffer.toString();
+            } else {
+                value = "****";
+            }
+        }
+        return value;
+    }
 
 
     public static void addHttpHeaders(Span span, String type, HeaderSet headers) {
@@ -96,7 +133,7 @@ public final class Utils {
                 String key = entry.getKey();
                 String value = getHeaderValues(entry);
                 if (key.equalsIgnoreCase("Authorization")) {
-                    value = "REDACTED";
+                    value = protectAuthorizationHeader(value);
                 }
                 if (type.equals("request") && !HeaderFilter.matchRequestFilter(key)) {  
                     span.setAttribute(prefix + key, value);                    
