@@ -3,6 +3,7 @@ package com.axway.apim.opentelemetry;
 import com.vordel.circuit.Message;
 import com.vordel.coreapireg.runtime.broker.InvokableMethod;
 import com.vordel.dwe.CorrelationID;
+import com.vordel.dwe.http.HTTPMessage;
 import com.vordel.dwe.http.ServerTransaction;
 import com.vordel.mime.HeaderSet;
 import com.vordel.trace.Trace;
@@ -38,7 +39,7 @@ public class HttpServer {
 
 
     public Object aroundHttpServer(ProceedingJoinPoint pjp, Message message, String apiName, String httpVerb, 
-        InvokableMethod runMethod, ServerTransaction txn) throws Throwable {
+        InvokableMethod runMethod) throws Throwable {
 
         Object pjpReturnObject;
         HeaderSet headerSet = (HeaderSet) message.get(Utils.HTTP_HEADERS);
@@ -73,17 +74,21 @@ public class HttpServer {
             span.setAttribute(HttpAttributes.HTTP_REQUEST_METHOD, httpVerb);
             span.setAttribute(HttpAttributes.HTTP_ROUTE, httpRoute);
 
-            try {
-                span.setAttribute(NetworkAttributes.NETWORK_PROTOCOL_VERSION, txn.getVersion());
-                span.setAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS, txn.getRemoteAddr().getHostString());
-                span.setAttribute(NetworkAttributes.NETWORK_PEER_PORT, txn.getRemoteAddr().getPort());
-                // TODO server host name?
-                span.setAttribute(ServerAttributes.SERVER_ADDRESS, txn.getLocalAddr().getHostString());
-                span.setAttribute(ServerAttributes.SERVER_PORT, txn.getLocalAddr().getPort());
-            } catch (NullPointerException e) {
-                Trace.error("OpenTelemetry :: Unable to set HTTP URL attribute: " + e.getMessage());
+            if (message instanceof HTTPMessage) {
+                HTTPMessage httpMsg = (HTTPMessage) message;
+                ServerTransaction serverTxn = httpMsg.getTxn();
+                if (serverTxn!=null) {
+                    try {
+                        span.setAttribute(NetworkAttributes.NETWORK_PROTOCOL_VERSION, serverTxn.getVersion());
+                        span.setAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS, serverTxn.getRemoteAddr().getHostString());
+                        span.setAttribute(NetworkAttributes.NETWORK_PEER_PORT, serverTxn.getRemoteAddr().getPort());
+                        span.setAttribute(ServerAttributes.SERVER_ADDRESS, serverTxn.getLocalAddr().getHostString());
+                        span.setAttribute(ServerAttributes.SERVER_PORT, serverTxn.getLocalAddr().getPort());
+                    } catch (NullPointerException e) {
+                        Trace.error("OpenTelemetry :: Unable to set span attribute for network peer / server address: " + e.getMessage());
+                    }
+                }
             }
-
             span.setAttribute("axway.message.http.request.path", requestPath);
             span.setAttribute("axway.message.api.name", apiName);
             span.setAttribute("axway.message.api.path", apiPath);
