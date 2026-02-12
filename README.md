@@ -11,13 +11,11 @@ This artifact tested with the following version:
 
 ## Compile/Build
 
-In `build.gradle` file, update dependencies location:
+Set the environment variable `APIM_FOLDER` to the API-Gateway installation folder (e.g. `/opt/Axway/APIM/apigateway`) or modify the `build.gradle` file, update dependencies location:
 
-- Set the variable `apim_folder` to you API-Gateway installation folder (e.g. `opt/Axway/APIM/apigateway`)
-
-
+Build
 ```
-gradlew clean jar
+APIM_FOLDER="/opt/Axway/APIM/apigateway" gradlew clean jar
 ```
 
 ## Setup
